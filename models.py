@@ -50,9 +50,11 @@ def output_feedback(n_a, n_dense, n_y):
 
 def state_cell_only(n_a, n_dense, drop_rate, n_y):
     encoder_LSTM = layers.Bidirectional(layers.LSTM(units = n_a, return_state=True))
-    decoder_LSTM = layers.Bidirectional(layers.LSTM(units = n_a, return_sequences=True))
+    decoder_LSTM_L1 = layers.Bidirectional(layers.LSTM(units = n_a, return_sequences=True))
+    decoder_LSTM_L2 = layers.Bidirectional(layers.LSTM(units = n_a, return_sequences=True))
     flatter = layers.Flatten()
-    dense = layers.Dense(units = n_dense, activation='tanh')
+    dense_L1 = layers.Dense(units = n_dense, activation='tanh')
+    dense_L2 = layers.Dense(units = n_dense, activation='tanh')
     dropout = layers.Dropout(rate=drop_rate)
     dense_out = layers.Dense(units = n_y, activation='linear')
     concatenator = layers.Concatenate()
@@ -68,9 +70,12 @@ def state_cell_only(n_a, n_dense, drop_rate, n_y):
     decoder_input = layers.Input(shape=(1,n_a))
     decoder_state = [for_encoder_h, for_encoder_c, back_encoder_h, back_encoder_c]
 
-    decoder_output = decoder_LSTM(decoder_input, initial_state=decoder_state)
+    decoder_output = decoder_LSTM_L1(decoder_input, initial_state=decoder_state)
+    decoder_output = decoder_LSTM_L2(decoder_output, initial_state=decoder_state)
     decoder_output_flat = flatter(decoder_output)
-    out = dense(decoder_output_flat)
+    out = dense_L1(decoder_output_flat)
+    out = dropout(out)
+    out = dense_L2(out)
     out = dropout(out)
     out = dense_out(out)
     
